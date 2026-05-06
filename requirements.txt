@@ -1,0 +1,16 @@
+flask
+python-dotenv
+
+langchain
+langchain-core
+langchain-classic
+langchain-community
+langchain-text-splitters
+langchain-pinecone
+langchain-groq
+langchain-huggingface
+
+sentence-transformers
+pypdf
+
+pinecone[grpc]
