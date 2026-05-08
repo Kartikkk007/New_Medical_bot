@@ -18,7 +18,7 @@
                     <h3>Medical Assistant</h3>
                     <p>
                         <span class="status-dot"></span>
-                        Online • Ready to help
+                        Online - Ready to help
                     </p>
                 </div>
             </div>
@@ -32,6 +32,17 @@
             </div>
 
             <div class="chat-footer">
+                <div class="document-tools">
+                    <input type="file" id="pdfUpload" accept="application/pdf" class="file-input">
+                    <button type="button" id="uploadButton" class="tool-button">
+                        <i class="fas fa-file-upload"></i>
+                        <span>Upload PDF</span>
+                    </button>
+                    <button type="button" id="resetButton" class="tool-button secondary">
+                        <i class="fas fa-undo"></i>
+                        <span>Reset</span>
+                    </button>
+                </div>
                 <form id="messageArea" class="input-container">
                     <textarea 
                         id="text" 
@@ -61,6 +72,75 @@
             // Remove welcome message on first interaction
             let firstMessage = true;
 
+            function appendMessage(type, text, time) {
+                const message = $('<div>').addClass('message').addClass(type);
+                const content = $('<div>').addClass('message-content');
+                const bubble = $('<div>').addClass('message-bubble').text(text);
+                const timestamp = $('<div>').addClass('message-time').text(time);
+                const avatar = $('<div>').addClass('message-avatar');
+                const image = $('<img>').attr({
+                    src: type === 'user'
+                        ? 'https://i.ibb.co/d5b84Xw/Untitled-design.png'
+                        : 'https://cdn-icons-png.flaticon.com/512/387/387569.png',
+                    alt: type === 'user' ? 'User' : 'Bot'
+                });
+
+                avatar.append(image);
+                content.append(bubble, timestamp);
+
+                if (type === 'user') {
+                    message.append(content, avatar);
+                } else {
+                    message.append(avatar, content);
+                }
+
+                $("#messageFormeight").append(message);
+                $("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
+            }
+
+            function currentTime() {
+                const date = new Date();
+                const hour = date.getHours().toString().padStart(2, '0');
+                const minute = date.getMinutes().toString().padStart(2, '0');
+                return hour + ":" + minute;
+            }
+
+            $("#uploadButton").on("click", function() {
+                const file = $("#pdfUpload")[0].files[0];
+                if (!file) {
+                    appendMessage('bot', 'Please choose a PDF first.', currentTime());
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+                $("#uploadButton").prop('disabled', true);
+
+                $.ajax({
+                    url: "/upload",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                }).done(function(data) {
+                    appendMessage('bot', data.message, currentTime());
+                }).fail(function(xhr) {
+                    const message = xhr.responseJSON && xhr.responseJSON.error
+                        ? xhr.responseJSON.error
+                        : 'Upload failed. Please try another PDF.';
+                    appendMessage('bot', message, currentTime());
+                }).always(function() {
+                    $("#uploadButton").prop('disabled', false);
+                    $("#pdfUpload").val('');
+                });
+            });
+
+            $("#resetButton").on("click", function() {
+                $.post("/reset_context").done(function(data) {
+                    appendMessage('bot', data.message, currentTime());
+                });
+            });
+
             $("#messageArea").on("submit", function(event) {
                 event.preventDefault();
                 
@@ -69,52 +149,27 @@
                     firstMessage = false;
                 }
 
-                const date = new Date();
-                const hour = date.getHours().toString().padStart(2, '0');
-                const minute = date.getMinutes().toString().padStart(2, '0');
-                const str_time = hour + ":" + minute;
+                const str_time = currentTime();
                 const rawText = $("#text").val().trim();
 
                 if (!rawText) return;
-
-                const userHtml = `
-                    <div class="message user">
-                        <div class="message-content">
-                            <div class="message-bubble">${rawText}</div>
-                            <div class="message-time">${str_time}</div>
-                        </div>
-                        <div class="message-avatar">
-                            <img src="https://i.ibb.co/d5b84Xw/Untitled-design.png" alt="User">
-                        </div>
-                    </div>
-                `;
                 
                 $("#text").val("");
                 $("#text").css('height', 'auto');
-                $("#messageFormeight").append(userHtml);
-                $("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
+                appendMessage('user', rawText, str_time);
 
                 $.ajax({
                     data: { msg: rawText },
                     type: "POST",
                     url: "/get",
                 }).done(function(data) {
-                    const botHtml = `
-                        <div class="message bot">
-                            <div class="message-avatar">
-                                <img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" alt="Bot">
-                            </div>
-                            <div class="message-content">
-                                <div class="message-bubble">${data}</div>
-                                <div class="message-time">${str_time}</div>
-                            </div>
-                        </div>
-                    `;
-                    $("#messageFormeight").append(botHtml);
-                    $("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
+                    appendMessage('bot', data, currentTime());
+                }).fail(function(xhr) {
+                    appendMessage('bot', xhr.responseText || 'Something went wrong.', currentTime());
                 });
             });
         });
     </script>
 </body>
 </html>
+

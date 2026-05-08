@@ -199,6 +199,42 @@ body, html {
     border-top: 1px solid #e2e8f0;
 }
 
+.document-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.file-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+}
+
+.tool-button {
+    height: 38px;
+    border: none;
+    border-radius: 8px;
+    background: #2563eb;
+    color: white;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.tool-button.secondary {
+    background: #475569;
+}
+
+.tool-button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
 .input-container {
     display: flex;
     gap: 12px;
@@ -285,5 +321,15 @@ body, html {
 
     .message-content {
         max-width: 85%;
+    }
+
+    .document-tools {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .tool-button {
+        justify-content: center;
+        width: 100%;
     }
 }
